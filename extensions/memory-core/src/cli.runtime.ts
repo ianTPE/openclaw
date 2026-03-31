@@ -30,12 +30,7 @@ import {
   listMemoryFiles,
   normalizeExtraMemoryPaths,
 } from "openclaw/plugin-sdk/memory-core-host-runtime-files";
-import { buildAgentSessionKey } from "openclaw/plugin-sdk/routing";
-import type {
-  MemoryCommandOptions,
-  MemoryPromptPreviewCommandOptions,
-  MemorySearchCommandOptions,
-} from "./cli.types.js";
+import type { MemoryCommandOptions, MemorySearchCommandOptions } from "./cli.types.js";
 import { canonicalizeCtxfstDocument } from "./memory/formats/ctxfst/canonicalize.js";
 import { parseCtxfstDocument } from "./memory/formats/ctxfst/parser.js";
 import type { CtxfstDocument } from "./memory/formats/ctxfst/types.js";
@@ -126,15 +121,6 @@ function resolveAgent(cfg: OpenClawConfig, agent?: string) {
     return trimmed;
   }
   return resolveDefaultAgentId(cfg);
-}
-
-function buildCliMemorySearchSessionKey(agentId: string): string {
-  return buildAgentSessionKey({
-    agentId,
-    channel: "cli",
-    peer: { kind: "direct", id: "memory-search" },
-    dmScope: "per-channel-peer",
-  });
 }
 
 function resolveAgentIds(cfg: OpenClawConfig, agent?: string): string[] {
@@ -817,69 +803,10 @@ export async function runMemorySearch(
     process.exitCode = 1;
     return;
   }
-  const { config: cfg, diagnostics } = await loadMemoryCommandConfig("memory search");
-  emitMemorySecretResolveDiagnostics(diagnostics, { json: Boolean(opts.json) });
-  const agentId = resolveAgent(cfg, opts.agent);
-  await withMemoryManagerForAgent({
-    cfg,
-    agentId,
-    run: async (manager) => {
-      const sessionKey = buildCliMemorySearchSessionKey(agentId);
-      let results: Awaited<ReturnType<typeof manager.search>>;
-      try {
-        results = await manager.search(query, {
-          maxResults: opts.maxResults,
-          minScore: opts.minScore,
-          sessionKey,
-        });
-      } catch (err) {
-        const message = formatErrorMessage(err);
-        defaultRuntime.error(`Memory search failed: ${message}`);
-        process.exitCode = 1;
-        return;
-      }
-      if (opts.json) {
-        defaultRuntime.writeJson({ results });
-        return;
-      }
-      if (results.length === 0) {
-        defaultRuntime.log("No matches.");
-        return;
-      }
-      const rich = isRich();
-      const lines: string[] = [];
-      for (const result of results) {
-        lines.push(
-          `${colorize(rich, theme.success, result.score.toFixed(3))} ${colorize(
-            rich,
-            theme.accent,
-            `${shortenHomePath(result.path)}:${result.startLine}-${result.endLine}`,
-          )}`,
-        );
-        lines.push(colorize(rich, theme.muted, result.snippet));
-        lines.push("");
-      }
-      defaultRuntime.log(lines.join("\n").trim());
-    },
-  });
-}
-
-export async function runMemoryPromptPreview(
-  queryArg: string | undefined,
-  opts: MemoryPromptPreviewCommandOptions,
-) {
-  const query = opts.query ?? queryArg;
-  if (!query) {
-    defaultRuntime.error(
-      "Missing preview query. Provide a positional query or use --query <text>.",
-    );
-    process.exitCode = 1;
-    return;
-  }
   const normalizedQuery = query.trim().replace(/[?!.,;:]+$/g, "") || query.trim();
 
   setVerbose(Boolean(opts.verbose));
-  const { config: cfg, diagnostics } = await loadMemoryCommandConfig("memory prompt-preview");
+  const { config: cfg, diagnostics } = await loadMemoryCommandConfig("memory search");
   emitMemorySecretResolveDiagnostics(diagnostics, { json: Boolean(opts.json) });
   const agentId = resolveAgent(cfg, opts.agent);
   const memorySearch = resolveMemorySearchConfig(cfg, agentId);
@@ -896,7 +823,7 @@ export async function runMemoryPromptPreview(
       extraPaths: memorySearch.extraPaths,
     });
   } catch (err) {
-    defaultRuntime.error(`Prompt preview failed: ${formatErrorMessage(err)}`);
+    defaultRuntime.error(`Memory search failed: ${formatErrorMessage(err)}`);
     process.exitCode = 1;
     return;
   }

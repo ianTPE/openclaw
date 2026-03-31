@@ -4,11 +4,7 @@ import {
   formatHelpExamples,
   theme,
 } from "openclaw/plugin-sdk/memory-core-host-runtime-cli";
-import type {
-  MemoryCommandOptions,
-  MemoryPromptPreviewCommandOptions,
-  MemorySearchCommandOptions,
-} from "./cli.types.js";
+import type { MemoryCommandOptions, MemorySearchCommandOptions } from "./cli.types.js";
 
 type MemoryCliRuntime = typeof import("./cli.runtime.js");
 
@@ -36,10 +32,10 @@ async function runMemorySearch(queryArg: string | undefined, opts: MemorySearchC
 
 async function runMemoryPromptPreview(
   queryArg: string | undefined,
-  opts: MemoryPromptPreviewCommandOptions,
+  opts: MemorySearchCommandOptions,
 ) {
   const runtime = await loadMemoryCliRuntime();
-  await runtime.runMemoryPromptPreview(queryArg, opts);
+  await runtime.runMemorySearch(queryArg, opts);
 }
 
 export function registerMemoryCli(program: Command) {
@@ -53,14 +49,14 @@ export function registerMemoryCli(program: Command) {
           ["openclaw memory status", "Show index and provider status."],
           ["openclaw memory status --deep", "Probe embedding provider readiness."],
           ["openclaw memory index --force", "Force a full reindex."],
-          ['openclaw memory search "meeting notes"', "Quick search using positional query."],
+          ['openclaw memory search "meeting notes"', "Search memory via CtxFST retrieval."],
           [
-            'openclaw memory prompt-preview --expand-graph "What is required before Analyze Resume?"',
-            "Render the Phase 5 CtxFST prompt context preview.",
+            'openclaw memory search --expand-graph "What is required before Analyze Resume?"',
+            "Search with one-hop graph expansion.",
           ],
           [
-            'openclaw memory search --query "deployment" --max-results 20',
-            "Limit results for focused troubleshooting.",
+            'openclaw memory search --token-limit 8000 "deployment"',
+            "Search with a custom token budget.",
           ],
           ["openclaw memory status --json", "Output machine-readable JSON (good for scripts)."],
         ])}\n\n${theme.muted("Docs:")} ${formatDocsLink("/cli/memory", "docs.openclaw.ai/cli/memory")}\n`,
@@ -90,28 +86,29 @@ export function registerMemoryCli(program: Command) {
 
   memory
     .command("search")
-    .description("Search memory files")
+    .description("Search memory files via CtxFST retrieval")
     .argument("[query]", "Search query")
     .option("--query <text>", "Search query (alternative to positional argument)")
     .option("--agent <id>", "Agent id (default: default agent)")
-    .option("--max-results <n>", "Max results", (value: string) => Number(value))
-    .option("--min-score <n>", "Minimum score", (value: string) => Number(value))
+    .option("--expand-graph", "Enable one-hop graph expansion", false)
+    .option("--token-limit <n>", "Prompt token limit", (value: string) => Number(value))
     .option("--json", "Print JSON")
+    .option("--verbose", "Verbose logging", false)
     .action(async (queryArg: string | undefined, opts: MemorySearchCommandOptions) => {
       await runMemorySearch(queryArg, opts);
     });
 
   memory
     .command("prompt-preview")
-    .description("Render the CtxFST Phase 5 prompt context preview")
-    .argument("[query]", "Preview query")
-    .option("--query <text>", "Preview query (alternative to positional argument)")
+    .description("Alias for 'memory search' (deprecated)")
+    .argument("[query]", "Search query")
+    .option("--query <text>", "Search query (alternative to positional argument)")
     .option("--agent <id>", "Agent id (default: default agent)")
     .option("--expand-graph", "Enable one-hop graph expansion", false)
     .option("--token-limit <n>", "Prompt token limit", (value: string) => Number(value))
     .option("--json", "Print JSON")
     .option("--verbose", "Verbose logging", false)
-    .action(async (queryArg: string | undefined, opts: MemoryPromptPreviewCommandOptions) => {
+    .action(async (queryArg: string | undefined, opts: MemorySearchCommandOptions) => {
       await runMemoryPromptPreview(queryArg, opts);
     });
 }

@@ -274,11 +274,11 @@ describe("memory cli", () => {
     expect(helpText).toContain("openclaw memory status --deep");
     expect(helpText).toContain("Probe embedding provider readiness.");
     expect(helpText).toContain('openclaw memory search "meeting notes"');
-    expect(helpText).toContain("Quick search using positional query.");
-    expect(helpText).toContain("openclaw memory prompt-preview --expand-graph");
-    expect(helpText).toContain("Render the Phase 5 CtxFST prompt context preview.");
-    expect(helpText).toContain('openclaw memory search --query "deployment" --max-results 20');
-    expect(helpText).toContain("Limit results for focused troubleshooting.");
+    expect(helpText).toContain("Search memory via CtxFST retrieval.");
+    expect(helpText).toContain("openclaw memory search --expand-graph");
+    expect(helpText).toContain("Search with one-hop graph expansion.");
+    expect(helpText).toContain('openclaw memory search --token-limit 8000 "deployment"');
+    expect(helpText).toContain("Search with a custom token budget.");
   });
 
   it("renders ctxfst prompt preview with graph expansion", async () => {
@@ -456,39 +456,50 @@ describe("memory cli", () => {
     });
   });
 
-  it("logs close failure after search", async () => {
-    const search = vi.fn(async () => [
-      {
-        path: "memory/2026-01-12.md",
-        startLine: 1,
-        endLine: 2,
-        score: 0.5,
-        snippet: "Hello",
-      },
-    ]);
-    await expectCloseFailureAfterCommand({
-      args: ["search", "hello"],
-      manager: { search },
-      beforeExpect: () => {
-        expect(search).toHaveBeenCalled();
+  it("renders search results via ctxfst pipeline", async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "memory-cli-search-ctxfst-"));
+    const workspaceDir = path.join(tmpDir, "workspace");
+    await copyCtxfstFixture(path.join(workspaceDir, "memory", "retrieval-test.ctxfst.md"));
+
+    loadConfig.mockReturnValue({
+      agents: {
+        defaults: {
+          workspace: workspaceDir,
+          memorySearch: { enabled: true, provider: "openai" },
+        },
       },
     });
+
+    const log = spyRuntimeLogs(defaultRuntime);
+    await runMemoryCli(["search", "What is required before Analyze Resume?"]);
+
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("## Relevant Entities"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Analyze Resume"));
+
+    await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it("closes manager after search error", async () => {
-    const close = vi.fn(async () => {});
-    const search = vi.fn(async () => {
-      throw new Error("boom");
+  it("search with --expand-graph includes graph entities", async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "memory-cli-search-graph-"));
+    const workspaceDir = path.join(tmpDir, "workspace");
+    await copyCtxfstFixture(path.join(workspaceDir, "memory", "retrieval-test.ctxfst.md"));
+
+    loadConfig.mockReturnValue({
+      agents: {
+        defaults: {
+          workspace: workspaceDir,
+          memorySearch: { enabled: true, provider: "openai" },
+        },
+      },
     });
-    mockManager({ search, close });
 
-    const error = spyRuntimeErrors(defaultRuntime);
-    await runMemoryCli(["search", "oops"]);
+    const log = spyRuntimeLogs(defaultRuntime);
+    await runMemoryCli(["search", "What is required before Analyze Resume?", "--expand-graph"]);
 
-    expect(search).toHaveBeenCalled();
-    expect(close).toHaveBeenCalled();
-    expect(error).toHaveBeenCalledWith(expect.stringContaining("Memory search failed: boom"));
-    expect(process.exitCode).toBe(1);
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("## Relevant Entities"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("## Related Entities (Graph)"));
+
+    await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
   it("prints status json output when requested", async () => {
@@ -552,55 +563,71 @@ describe("memory cli", () => {
     expect(close).toHaveBeenCalled();
   });
 
-  it("prints no matches for empty search results", async () => {
-    const close = vi.fn(async () => {});
-    const search = vi.fn(async () => []);
-    mockManager({ search, close });
+  it("prints no-files message when no ctxfst documents exist", async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "memory-cli-search-empty-"));
+    const workspaceDir = path.join(tmpDir, "workspace");
+    await fs.mkdir(path.join(workspaceDir, "memory"), { recursive: true });
+
+    loadConfig.mockReturnValue({
+      agents: {
+        defaults: {
+          workspace: workspaceDir,
+          memorySearch: { enabled: true, provider: "openai" },
+        },
+      },
+    });
 
     const log = spyRuntimeLogs(defaultRuntime);
     await runMemoryCli(["search", "hello"]);
 
-    expect(search).toHaveBeenCalledWith("hello", {
-      maxResults: undefined,
-      minScore: undefined,
-      sessionKey: "agent:main:cli:direct:memory-search",
-    });
-    expect(log).toHaveBeenCalledWith("No matches.");
-    expect(close).toHaveBeenCalled();
+    expect(log).toHaveBeenCalledWith("No .ctxfst.md memory files found.");
+
+    await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
   it("accepts --query for memory search", async () => {
-    const close = vi.fn(async () => {});
-    const search = vi.fn(async () => []);
-    mockManager({ search, close });
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "memory-cli-search-query-"));
+    const workspaceDir = path.join(tmpDir, "workspace");
+    await copyCtxfstFixture(path.join(workspaceDir, "memory", "retrieval-test.ctxfst.md"));
+
+    loadConfig.mockReturnValue({
+      agents: {
+        defaults: {
+          workspace: workspaceDir,
+          memorySearch: { enabled: true, provider: "openai" },
+        },
+      },
+    });
 
     const log = spyRuntimeLogs(defaultRuntime);
-    await runMemoryCli(["search", "--query", "deployment notes"]);
+    await runMemoryCli(["search", "--query", "Analyze Resume"]);
 
-    expect(search).toHaveBeenCalledWith("deployment notes", {
-      maxResults: undefined,
-      minScore: undefined,
-      sessionKey: "agent:main:cli:direct:memory-search",
-    });
-    expect(log).toHaveBeenCalledWith("No matches.");
-    expect(close).toHaveBeenCalled();
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("## Relevant Entities"));
     expect(process.exitCode).toBeUndefined();
+
+    await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
   it("prefers --query when positional and flag are both provided", async () => {
-    const close = vi.fn(async () => {});
-    const search = vi.fn(async () => []);
-    mockManager({ search, close });
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "memory-cli-search-prefer-"));
+    const workspaceDir = path.join(tmpDir, "workspace");
+    await copyCtxfstFixture(path.join(workspaceDir, "memory", "retrieval-test.ctxfst.md"));
 
-    spyRuntimeLogs(defaultRuntime);
-    await runMemoryCli(["search", "positional", "--query", "flagged"]);
-
-    expect(search).toHaveBeenCalledWith("flagged", {
-      maxResults: undefined,
-      minScore: undefined,
-      sessionKey: "agent:main:cli:direct:memory-search",
+    loadConfig.mockReturnValue({
+      agents: {
+        defaults: {
+          workspace: workspaceDir,
+          memorySearch: { enabled: true, provider: "openai" },
+        },
+      },
     });
-    expect(close).toHaveBeenCalled();
+
+    const log = spyRuntimeLogs(defaultRuntime);
+    await runMemoryCli(["search", "positional", "--query", "Analyze Resume"]);
+
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Analyze Resume"));
+
+    await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
   it("fails when neither positional query nor --query is provided", async () => {
@@ -615,28 +642,38 @@ describe("memory cli", () => {
   });
 
   it("prints search results as json when requested", async () => {
-    const close = vi.fn(async () => {});
-    const search = vi.fn(async () => [
-      {
-        path: "memory/2026-01-12.md",
-        startLine: 1,
-        endLine: 2,
-        score: 0.5,
-        snippet: "Hello",
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "memory-cli-search-json-"));
+    const workspaceDir = path.join(tmpDir, "workspace");
+    await copyCtxfstFixture(path.join(workspaceDir, "memory", "retrieval-test.ctxfst.md"));
+
+    loadConfig.mockReturnValue({
+      agents: {
+        defaults: {
+          workspace: workspaceDir,
+          memorySearch: { enabled: true, provider: "openai" },
+        },
       },
-    ]);
-    mockManager({ search, close });
+    });
 
     const writeJson = spyRuntimeJson(defaultRuntime);
-    await runMemoryCli(["search", "hello", "--json"]);
+    await runMemoryCli(["search", "Analyze Resume", "--json"]);
 
-    const payload = firstWrittenJsonArg<{ results: unknown[] }>(writeJson);
+    const payload = firstWrittenJsonArg<{
+      query: string;
+      resolvedQuery: string;
+      documents: string[];
+      contextPack: unknown;
+      prompt: unknown;
+      rendered: string;
+    }>(writeJson);
     expect(payload).not.toBeNull();
     if (!payload) {
       throw new Error("expected json payload");
     }
-    expect(Array.isArray(payload.results)).toBe(true);
-    expect(payload.results).toHaveLength(1);
-    expect(close).toHaveBeenCalled();
+    expect(payload.query).toBe("Analyze Resume");
+    expect(payload.documents).toHaveLength(1);
+    expect(payload.rendered).toContain("Analyze Resume");
+
+    await fs.rm(tmpDir, { recursive: true, force: true });
   });
 });

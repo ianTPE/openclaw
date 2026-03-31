@@ -9,12 +9,6 @@ export type MemoryCommandOptions = {
 
 export type MemorySearchCommandOptions = MemoryCommandOptions & {
   query?: string;
-  maxResults?: number;
-  minScore?: number;
-};
-
-export type MemoryPromptPreviewCommandOptions = MemoryCommandOptions & {
-  query?: string;
   expandGraph?: boolean;
   tokenLimit?: number;
 };

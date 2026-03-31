@@ -324,7 +324,7 @@ openclaw memory state show --session test-session
 openclaw memory state precheck --session test-session --entity entity:analyze-resume
 openclaw memory state apply-success --session test-session --entity entity:analyze-resume
 openclaw memory state apply-failure --session test-session --entity entity:analyze-resume
-openclaw memory prompt-preview --session test-session --format ctxfst "What do I need before Analyze Resume?"
+openclaw memory search --session test-session "What do I need before Analyze Resume?"
 ```
 
 如果暫時沒有 CLI，也至少應有 integration tests 能覆蓋：
