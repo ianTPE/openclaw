@@ -1,4 +1,4 @@
-// Shared types for the retrieval pipeline (Phase 3+4).
+// Shared types for the retrieval pipeline (Phase 3+4+5).
 
 import type { EntityMatch } from "../formats/ctxfst/types.js";
 
@@ -43,4 +43,45 @@ export interface ContextPack {
   graph_chunks: ChunkHit[];
   /** Deduplicated and ranked final list. */
   fused_chunks: FusedChunkHit[];
+}
+
+// ── Phase 5: Prompt Adapter types ──────────────────────────────────
+
+/** Chunk metadata needed by the prompt adapter to render content. */
+export interface ChunkContent {
+  context: string;
+  content: string;
+  priority: "high" | "medium" | "low";
+}
+
+/** Entity metadata needed by the prompt adapter beyond what EntityMatch provides. */
+export interface EntityDetail {
+  type: string;
+  preconditions: string[];
+  postconditions: string[];
+}
+
+/** A labelled section in the assembled prompt. */
+export interface PromptSection {
+  /** Section heading (e.g. "Relevant Entities", "Supporting Chunks"). */
+  label: string;
+  /** Rendered text content for this section. */
+  content: string;
+  /** Priority tier for token-budget trimming (higher = harder to trim). */
+  priority: number;
+}
+
+/** Token usage accounting. */
+export interface TokenUsage {
+  /** Estimated token count of the rendered prompt. */
+  estimated: number;
+  /** Configured hard token limit. */
+  limit: number;
+}
+
+/** The structured prompt context output from the prompt adapter (Phase 5). */
+export interface PromptContext {
+  query: string;
+  sections: PromptSection[];
+  token_usage: TokenUsage;
 }
