@@ -62,10 +62,26 @@
   - 為什麼短期先 fork 驗證、長期再收斂成 plugin / hook 架構
 - `20-gap-checklist-before-fork.md`
   - 真正 fork 前應先去 upstream repo 確認的 gap 與入口點清單
+- `21-phase-1-validation-checklist.md`
+  - Phase 1 Parser MVP 驗收清單
+- `22-phase-2-validation-checklist.md`
+  - Phase 2 Entity-Aware Indexing 驗收清單
+- `23-phase-3-validation-checklist.md`
+  - Phase 3 Entity-Aware Retrieval 驗收清單
+- `24-phase-4-validation-checklist.md`
+  - Phase 4 Graph Expansion 驗收清單
+- `25-phase-5-validation-checklist.md`
+  - Phase 5 Prompt Adapter 驗收清單
+- `26-phase-6-validation-checklist.md`
+  - Phase 6 Runtime State 驗收清單
+- `27-phase-7-validation-checklist.md`
+  - Phase 7 Planner And Routing 驗收清單
 - `examples/minimal.ctxfst.md`
   - 最小合法 `.ctxfst.md` 範例
 - `examples/full.ctxfst.md`
-  - 含 state / action / framework 的完整 `.ctxfst.md` 範例
+  - 含 state / preconditions / postconditions 閉環的完整 `.ctxfst.md` 範例
+- `examples/retrieval-test.ctxfst.md`
+  - retrieval / graph / runtime / planner 驗收用的豐富 fixture（10 entities、8 chunks、完整 workflow 閉環）
 
 ---
 
@@ -115,14 +131,14 @@
 建議順序：
 
 1. `17-table-of-contents-and-doc-map.md`
-2. `07-file-and-module-blueprint.md`
-3. `08-api-and-interface-spec.md`
-4. `10-implementation-tasks-checklist.md`
-5. `11-test-plan.md`
-6. `09-migration-guide.md`
-7. `18-fork-maintenance-strategy.md`
-8. `19-plugin-architecture-option.md`
-9. `20-gap-checklist-before-fork.md`
+2. `20-gap-checklist-before-fork.md`
+3. `07-file-and-module-blueprint.md`
+4. `08-api-and-interface-spec.md`
+5. `10-implementation-tasks-checklist.md`
+6. `21-phase-1-validation-checklist.md`（以此類推，每做完一個 phase 就看對應的 validation checklist）
+7. `09-migration-guide.md`
+8. `18-fork-maintenance-strategy.md`
+9. `19-plugin-architecture-option.md`
 
 ### 如果你要做提案或和團隊對齊
 

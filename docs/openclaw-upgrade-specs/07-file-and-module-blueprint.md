@@ -65,8 +65,8 @@ memory/
 建議函式：
 
 ```ts
-export function isCtxfstPath(path: string): boolean
-export function looksLikeCtxfstDocument(source: string): boolean
+export function isCtxfstPath(path: string): boolean;
+export function looksLikeCtxfstDocument(source: string): boolean;
 ```
 
 ### `memory/formats/ctxfst/types.ts`
@@ -96,8 +96,8 @@ export type ValidationResult
 建議函式：
 
 ```ts
-export function parseCtxfstDocument(source: string, sourcePath: string): CtxfstDocument
-export function extractChunkBodies(markdownBody: string): Map<string, string>
+export function parseCtxfstDocument(source: string, sourcePath: string): CtxfstDocument;
+export function extractChunkBodies(markdownBody: string): Map<string, string>;
 ```
 
 ### `memory/formats/ctxfst/validator.ts`
@@ -111,7 +111,7 @@ export function extractChunkBodies(markdownBody: string): Map<string, string>
 建議函式：
 
 ```ts
-export function validateCtxfstDocument(doc: CtxfstDocument): ValidationResult
+export function validateCtxfstDocument(doc: CtxfstDocument): ValidationResult;
 ```
 
 ### `memory/formats/ctxfst/canonicalize.ts`
@@ -124,7 +124,7 @@ export function validateCtxfstDocument(doc: CtxfstDocument): ValidationResult
 建議函式：
 
 ```ts
-export function canonicalizeCtxfstDocument(doc: CtxfstDocument): CtxfstDocument
+export function canonicalizeCtxfstDocument(doc: CtxfstDocument): CtxfstDocument;
 ```
 
 ---
@@ -137,13 +137,14 @@ export function canonicalizeCtxfstDocument(doc: CtxfstDocument): CtxfstDocument
 
 - 把 canonical `CtxFST` document materialize 到 storage
 - 管理 document-level ingest transaction
+- **從 entities 的 `preconditions` / `postconditions` 自動推斷建立 static edges**：`preconditions` → `REQUIRES` edge，`postconditions` → `LEADS_TO` edge。此功能為 Phase 4 Graph Expansion 的必要前置。
 - **處理增量重建 (Incremental Update) 時的 Transaction 防線**：當底層掛有 SQLite Vector (如 sqlite-vec) 時，必須確保「刪除舊索引」與「寫入新索引」包在同一個 SQLite Transaction 內，防止中途失敗導致記憶庫污染或關聯重建到一半。
 
 建議函式：
 
 ```ts
-export async function indexCtxfstDocument(doc: CtxfstDocument): Promise<void>
-export async function reindexCtxfstDocument(documentId: string): Promise<void>
+export async function indexCtxfstDocument(doc: CtxfstDocument): Promise<void>;
+export async function reindexCtxfstDocument(documentId: string): Promise<void>;
 ```
 
 ### `memory/indexing/entity_index.ts`
@@ -156,9 +157,9 @@ export async function reindexCtxfstDocument(documentId: string): Promise<void>
 建議函式：
 
 ```ts
-export async function upsertEntities(documentId: string, entities: CtxfstEntity[]): Promise<void>
-export async function findEntitiesByQuery(query: string): Promise<EntityMatch[]>
-export async function getChunksForEntities(entityIds: string[]): Promise<string[]>
+export async function upsertEntities(documentId: string, entities: CtxfstEntity[]): Promise<void>;
+export async function findEntitiesByQuery(query: string): Promise<EntityMatch[]>;
+export async function getChunksForEntities(entityIds: string[]): Promise<string[]>;
 ```
 
 ### `memory/indexing/edge_index.ts`
@@ -171,8 +172,11 @@ export async function getChunksForEntities(entityIds: string[]): Promise<string[
 建議函式：
 
 ```ts
-export async function upsertEntityEdges(edges: EntityEdgeRecord[]): Promise<void>
-export async function getNeighborEntities(entityIds: string[], relations?: string[]): Promise<EntityEdgeRecord[]>
+export async function upsertEntityEdges(edges: EntityEdgeRecord[]): Promise<void>;
+export async function getNeighborEntities(
+  entityIds: string[],
+  relations?: string[],
+): Promise<EntityEdgeRecord[]>;
 ```
 
 ### `memory/indexing/world_state_store.ts`
@@ -184,8 +188,8 @@ export async function getNeighborEntities(entityIds: string[], relations?: strin
 建議函式：
 
 ```ts
-export async function getWorldState(sessionId: string): Promise<WorldState>
-export async function saveWorldState(state: WorldState): Promise<void>
+export async function getWorldState(sessionId: string): Promise<WorldState>;
+export async function saveWorldState(state: WorldState): Promise<void>;
 ```
 
 ---
@@ -203,7 +207,7 @@ export async function saveWorldState(state: WorldState): Promise<void>
 建議函式：
 
 ```ts
-export async function matchEntities(query: string): Promise<EntityMatch[]>
+export async function matchEntities(query: string): Promise<EntityMatch[]>;
 ```
 
 ### `memory/retrieval/entity_retriever.ts`
@@ -216,7 +220,7 @@ export async function matchEntities(query: string): Promise<EntityMatch[]>
 建議函式：
 
 ```ts
-export async function retrieveByEntities(matches: EntityMatch[]): Promise<EntityRetrievalResult>
+export async function retrieveByEntities(matches: EntityMatch[]): Promise<EntityRetrievalResult>;
 ```
 
 ### `memory/retrieval/chunk_retriever.ts`
@@ -229,8 +233,8 @@ export async function retrieveByEntities(matches: EntityMatch[]): Promise<Entity
 建議函式：
 
 ```ts
-export async function retrieveChunksByVector(query: string, k?: number): Promise<ChunkHit[]>
-export async function retrieveChunksByKeyword(query: string, k?: number): Promise<ChunkHit[]>
+export async function retrieveChunksByVector(query: string, k?: number): Promise<ChunkHit[]>;
+export async function retrieveChunksByKeyword(query: string, k?: number): Promise<ChunkHit[]>;
 ```
 
 ### `memory/retrieval/graph_expander.ts`
@@ -242,7 +246,10 @@ export async function retrieveChunksByKeyword(query: string, k?: number): Promis
 建議函式：
 
 ```ts
-export async function expandEntityNeighborhood(entityIds: string[], options?: GraphExpansionOptions): Promise<ExpandedGraphResult>
+export async function expandEntityNeighborhood(
+  entityIds: string[],
+  options?: GraphExpansionOptions,
+): Promise<ExpandedGraphResult>;
 ```
 
 ### `memory/retrieval/rank_fusion.ts`
@@ -255,7 +262,7 @@ export async function expandEntityNeighborhood(entityIds: string[], options?: Gr
 建議函式：
 
 ```ts
-export function fuseRetrievalResults(input: FusionInput): RankedContext
+export function fuseRetrievalResults(input: FusionInput): RankedContext;
 ```
 
 ### `memory/retrieval/context_pack.ts`
@@ -267,7 +274,7 @@ export function fuseRetrievalResults(input: FusionInput): RankedContext
 建議函式：
 
 ```ts
-export function buildContextPack(input: RankedContext, state?: WorldState): ContextPack
+export function buildContextPack(input: RankedContext, state?: WorldState): ContextPack;
 ```
 
 ---
@@ -284,8 +291,8 @@ export function buildContextPack(input: RankedContext, state?: WorldState): Cont
 建議函式：
 
 ```ts
-export function createEmptyWorldState(sessionId: string): WorldState
-export function applyPostconditions(state: WorldState, postconditions: string[]): WorldState
+export function createEmptyWorldState(sessionId: string): WorldState;
+export function applyPostconditions(state: WorldState, postconditions: string[]): WorldState;
 ```
 
 ### `memory/runtime/precondition_checker.ts`
@@ -297,7 +304,7 @@ export function applyPostconditions(state: WorldState, postconditions: string[])
 建議函式：
 
 ```ts
-export function checkPreconditions(state: WorldState, required: string[]): PreconditionCheckResult
+export function checkPreconditions(state: WorldState, required: string[]): PreconditionCheckResult;
 ```
 
 ### `memory/runtime/execution_writeback.ts`
@@ -309,8 +316,8 @@ export function checkPreconditions(state: WorldState, required: string[]): Preco
 建議函式：
 
 ```ts
-export async function writeExecutionSuccess(input: ExecutionWritebackInput): Promise<void>
-export async function writeExecutionFailure(input: ExecutionFailureInput): Promise<void>
+export async function writeExecutionSuccess(input: ExecutionWritebackInput): Promise<void>;
+export async function writeExecutionFailure(input: ExecutionFailureInput): Promise<void>;
 ```
 
 ### `memory/runtime/runtime_events.ts`
@@ -322,7 +329,7 @@ export async function writeExecutionFailure(input: ExecutionFailureInput): Promi
 建議函式：
 
 ```ts
-export async function appendRuntimeEvent(event: RuntimeEvent): Promise<void>
+export async function appendRuntimeEvent(event: RuntimeEvent): Promise<void>;
 ```
 
 ---
@@ -339,7 +346,10 @@ export async function appendRuntimeEvent(event: RuntimeEvent): Promise<void>
 建議函式：
 
 ```ts
-export function buildCtxfstPromptContext(pack: ContextPack, state?: WorldState): PromptContextEnvelope
+export function buildCtxfstPromptContext(
+  pack: ContextPack,
+  state?: WorldState,
+): PromptContextEnvelope;
 ```
 
 ---

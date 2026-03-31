@@ -39,10 +39,21 @@
 - `15-blog-draft-openclaw-native-ctxfst.md`
 - `16-slides-outline.md`
 
+### Phase Validation Checklists
+
+- `21-phase-1-validation-checklist.md`
+- `22-phase-2-validation-checklist.md`
+- `23-phase-3-validation-checklist.md`
+- `24-phase-4-validation-checklist.md`
+- `25-phase-5-validation-checklist.md`
+- `26-phase-6-validation-checklist.md`
+- `27-phase-7-validation-checklist.md`
+
 ### Examples
 
 - `examples/minimal.ctxfst.md`
 - `examples/full.ctxfst.md`
+- `examples/retrieval-test.ctxfst.md`
 
 ### Maintenance And Upgrade Strategy
 
@@ -124,12 +135,14 @@
 2. `12-benchmark-plan.md`
 3. `10-implementation-tasks-checklist.md`
 4. `05-retrieval-runtime-spec.md`
+5. `21-phase-1-validation-checklist.md`（以此類推，每個 phase 對應一份）
 
 預期收穫：
 
 - 看懂要怎麼測 parser / retrieval / runtime
 - 看懂怎麼比較 chunk-only 與 entity-aware retrieval
 - 看懂什麼才算「真的有提升」
+- 每個 phase 有明確的驗收清單可照著跑
 
 ---
 
@@ -199,8 +212,9 @@ fork 前先確認 gap：
 
 8. `11-test-plan.md`
 9. `12-benchmark-plan.md`
-10. `18-fork-maintenance-strategy.md`
-11. `19-plugin-architecture-option.md`
+10. `21-phase-1-validation-checklist.md` 到 `27-phase-7-validation-checklist.md`（每做完一個 phase 就看對應的）
+11. `18-fork-maintenance-strategy.md`
+12. `19-plugin-architecture-option.md`
 
 ---
 

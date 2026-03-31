@@ -81,8 +81,10 @@ Phase 1 驗證不涵蓋：
 預期結果：
 
 - `ok = true`
-- entity / chunk counts 正確
+- entity count 與 fixture `entities[]` 宣告數量一致
+- chunk count 與 fixture `chunks[]` 宣告數量一致
 - warning 可有，但不應有 fatal error
+- 以 fixture 實際內容為準；若 fixture 被修改，驗收數字應同步更新
 
 ---
 
@@ -134,15 +136,22 @@ Phase 1 驗證不涵蓋：
 
 - parser 或 validator 視為 fatal error
 
-### Case B7: Invalid format or unsupported version
+### Case B7: Malformed YAML frontmatter
 
 情境：
 
-- frontmatter 缺少 `version` 或宣告了未來不支援的版本（例如 `version: 3.0`），或 `format` 錯誤
+- frontmatter 本身不是合法 YAML（例如縮排錯誤、非法字元、無法 parse）
+- 或 frontmatter 缺少 `entities` 或 `chunks` 這兩個必要 top-level key
 
 要驗證：
 
-- validator 正確攔截並報錯，不向下執行 parser
+- parser 在 frontmatter parse 階段即報 fatal error
+- 不應產生半套 canonical model
+
+備註：
+
+- `document_version` 屬於選填欄位，缺少時不應報錯
+- 若未來 spec 定義 format version gating，再追加 version validation case
 
 ---
 
@@ -286,7 +295,7 @@ Phase 1 至少要有以下測試：
 - [ ] body/frontmatter mismatch fail
 - [ ] unclosed `<Chunk>` fail
 - [ ] nested `<Chunk>` fail
-- [ ] invalid format/version fail
+- [ ] malformed YAML / missing required keys fail
 - [ ] canonicalization works
 - [ ] whitespace normalization works
 - [ ] legacy `.md` ingestion not broken

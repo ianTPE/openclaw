@@ -183,6 +183,21 @@
 - source 未變更時避免重建
 - source 變更時能安全 reindex（**必須將刪除舊索引與寫入新索引的操作包在同一個 SQLite Transaction 中確保一致性**）
 
+### Task 2.7
+
+- [ ] 實作從 preconditions / postconditions 自動推斷 static edges
+
+完成條件：
+
+- indexer 在 ingest 時自動從 entities 的 `preconditions` 建立 `REQUIRES` edges
+- indexer 在 ingest 時自動從 entities 的 `postconditions` 建立 `LEADS_TO` edges
+- 基於 `retrieval-test.ctxfst.md` 驗證至少有 6 條 auto-inferred edges
+- reindex 時舊的 static edges 會被正確清理並重建
+
+備註：
+
+- 此 task 為 Phase 4 Graph Expansion 的必要前置
+
 ---
 
 ## Phase 3: Entity-Aware Retrieval
@@ -520,7 +535,7 @@
 第一批可以直接開工的順序：
 
 1. Task 1.1 - 1.6
-2. Task 2.1 - 2.6
+2. Task 2.1 - 2.7
 3. Task 3.1 - 3.7
 4. Task 5.1 - 5.4
 
