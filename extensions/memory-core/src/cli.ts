@@ -4,7 +4,11 @@ import {
   formatHelpExamples,
   theme,
 } from "openclaw/plugin-sdk/memory-core-host-runtime-cli";
-import type { MemoryCommandOptions, MemorySearchCommandOptions } from "./cli.types.js";
+import type {
+  MemoryCommandOptions,
+  MemoryPromptPreviewCommandOptions,
+  MemorySearchCommandOptions,
+} from "./cli.types.js";
 
 type MemoryCliRuntime = typeof import("./cli.runtime.js");
 
@@ -30,6 +34,14 @@ async function runMemorySearch(queryArg: string | undefined, opts: MemorySearchC
   await runtime.runMemorySearch(queryArg, opts);
 }
 
+async function runMemoryPromptPreview(
+  queryArg: string | undefined,
+  opts: MemoryPromptPreviewCommandOptions,
+) {
+  const runtime = await loadMemoryCliRuntime();
+  await runtime.runMemoryPromptPreview(queryArg, opts);
+}
+
 export function registerMemoryCli(program: Command) {
   const memory = program
     .command("memory")
@@ -42,6 +54,10 @@ export function registerMemoryCli(program: Command) {
           ["openclaw memory status --deep", "Probe embedding provider readiness."],
           ["openclaw memory index --force", "Force a full reindex."],
           ['openclaw memory search "meeting notes"', "Quick search using positional query."],
+          [
+            'openclaw memory prompt-preview --expand-graph "What is required before Analyze Resume?"',
+            "Render the Phase 5 CtxFST prompt context preview.",
+          ],
           [
             'openclaw memory search --query "deployment" --max-results 20',
             "Limit results for focused troubleshooting.",
@@ -83,5 +99,19 @@ export function registerMemoryCli(program: Command) {
     .option("--json", "Print JSON")
     .action(async (queryArg: string | undefined, opts: MemorySearchCommandOptions) => {
       await runMemorySearch(queryArg, opts);
+    });
+
+  memory
+    .command("prompt-preview")
+    .description("Render the CtxFST Phase 5 prompt context preview")
+    .argument("[query]", "Preview query")
+    .option("--query <text>", "Preview query (alternative to positional argument)")
+    .option("--agent <id>", "Agent id (default: default agent)")
+    .option("--expand-graph", "Enable one-hop graph expansion", false)
+    .option("--token-limit <n>", "Prompt token limit", (value: string) => Number(value))
+    .option("--json", "Print JSON")
+    .option("--verbose", "Verbose logging", false)
+    .action(async (queryArg: string | undefined, opts: MemoryPromptPreviewCommandOptions) => {
+      await runMemoryPromptPreview(queryArg, opts);
     });
 }

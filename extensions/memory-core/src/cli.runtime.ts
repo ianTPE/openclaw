@@ -2,6 +2,8 @@ import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
+import { resolveAgentWorkspaceDir } from "openclaw/plugin-sdk/memory-core-host-engine-foundation";
 import {
   colorize,
   defaultRuntime,
@@ -18,6 +20,7 @@ import {
 } from "openclaw/plugin-sdk/memory-core-host-runtime-cli";
 import {
   loadConfig,
+  resolveMemorySearchConfig,
   resolveDefaultAgentId,
   resolveSessionTranscriptsDirForAgent,
   resolveStateDir,
@@ -28,8 +31,20 @@ import {
   normalizeExtraMemoryPaths,
 } from "openclaw/plugin-sdk/memory-core-host-runtime-files";
 import { buildAgentSessionKey } from "openclaw/plugin-sdk/routing";
-import type { MemoryCommandOptions, MemorySearchCommandOptions } from "./cli.types.js";
+import type {
+  MemoryCommandOptions,
+  MemoryPromptPreviewCommandOptions,
+  MemorySearchCommandOptions,
+} from "./cli.types.js";
+import { canonicalizeCtxfstDocument } from "./memory/formats/ctxfst/canonicalize.js";
+import { parseCtxfstDocument } from "./memory/formats/ctxfst/parser.js";
+import type { CtxfstDocument } from "./memory/formats/ctxfst/types.js";
 import { getMemorySearchManager } from "./memory/index.js";
+import { indexCtxfstDocument } from "./memory/indexing/ctxfst-indexer.js";
+import { ensureCtxfstSchema } from "./memory/indexing/ctxfst-schema.js";
+import { adaptContextToPrompt, renderPromptContext } from "./memory/retrieval/prompt-adapter.js";
+import { retrieveContext } from "./memory/retrieval/retrieval-pipeline.js";
+import type { ChunkContent, EntityDetail } from "./memory/retrieval/types.js";
 
 type MemoryManager = NonNullable<Awaited<ReturnType<typeof getMemorySearchManager>>["manager"]>;
 type MemoryManagerPurpose = Parameters<typeof getMemorySearchManager>[0]["purpose"];
@@ -136,6 +151,79 @@ function resolveAgentIds(cfg: OpenClawConfig, agent?: string): string[] {
 
 function formatExtraPaths(workspaceDir: string, extraPaths: string[]): string[] {
   return normalizeExtraMemoryPaths(workspaceDir, extraPaths).map((entry) => shortenHomePath(entry));
+}
+
+function toAbsoluteMemoryPath(workspaceDir: string, pathname: string): string {
+  return path.isAbsolute(pathname) ? pathname : path.join(workspaceDir, pathname);
+}
+
+async function loadCtxfstDocuments(params: {
+  workspaceDir: string;
+  extraPaths?: string[];
+}): Promise<CtxfstDocument[]> {
+  const files = await listMemoryFiles(
+    params.workspaceDir,
+    normalizeExtraMemoryPaths(params.workspaceDir, params.extraPaths ?? []),
+  );
+  const ctxfstFiles = files.filter((entry) => entry.endsWith(".ctxfst.md"));
+  const documents: CtxfstDocument[] = [];
+  for (const relOrAbsPath of ctxfstFiles) {
+    const absPath = toAbsoluteMemoryPath(params.workspaceDir, relOrAbsPath);
+    const source = await fs.readFile(absPath, "utf8");
+    const parsed = parseCtxfstDocument(source, relOrAbsPath);
+    documents.push(canonicalizeCtxfstDocument(parsed));
+  }
+  return documents;
+}
+
+function buildCtxfstPromptPreview(params: {
+  documents: CtxfstDocument[];
+  query: string;
+  expandGraph?: boolean;
+  tokenLimit?: number;
+}) {
+  const db = new DatabaseSync(":memory:");
+  try {
+    ensureCtxfstSchema(db);
+
+    const chunkContent = new Map<string, ChunkContent>();
+    const entityDetails = new Map<string, EntityDetail>();
+
+    for (const doc of params.documents) {
+      indexCtxfstDocument(db, doc);
+      for (const chunk of doc.chunks) {
+        chunkContent.set(chunk.id, {
+          context: chunk.context,
+          content: chunk.content,
+          priority:
+            chunk.priority === "high" || chunk.priority === "low" ? chunk.priority : "medium",
+        });
+      }
+      for (const entity of doc.entities) {
+        entityDetails.set(entity.id, {
+          type: entity.type,
+          preconditions: entity.preconditions,
+          postconditions: entity.postconditions,
+        });
+      }
+    }
+
+    const contextPack = retrieveContext({
+      db,
+      query: params.query,
+      graphExpansion: Boolean(params.expandGraph),
+    });
+    const prompt = adaptContextToPrompt({
+      contextPack,
+      chunkContent,
+      entityDetails,
+      tokenLimit: params.tokenLimit,
+    });
+    const rendered = renderPromptContext(prompt);
+    return { contextPack, prompt, rendered };
+  } finally {
+    db.close();
+  }
 }
 
 async function withMemoryManagerForAgent(params: {
@@ -774,4 +862,68 @@ export async function runMemorySearch(
       defaultRuntime.log(lines.join("\n").trim());
     },
   });
+}
+
+export async function runMemoryPromptPreview(
+  queryArg: string | undefined,
+  opts: MemoryPromptPreviewCommandOptions,
+) {
+  const query = opts.query ?? queryArg;
+  if (!query) {
+    defaultRuntime.error(
+      "Missing preview query. Provide a positional query or use --query <text>.",
+    );
+    process.exitCode = 1;
+    return;
+  }
+  const normalizedQuery = query.trim().replace(/[?!.,;:]+$/g, "") || query.trim();
+
+  setVerbose(Boolean(opts.verbose));
+  const { config: cfg, diagnostics } = await loadMemoryCommandConfig("memory prompt-preview");
+  emitMemorySecretResolveDiagnostics(diagnostics, { json: Boolean(opts.json) });
+  const agentId = resolveAgent(cfg, opts.agent);
+  const memorySearch = resolveMemorySearchConfig(cfg, agentId);
+  if (!memorySearch) {
+    defaultRuntime.log("Memory search disabled.");
+    return;
+  }
+
+  const workspaceDir = resolveAgentWorkspaceDir(cfg, agentId);
+  let documents: CtxfstDocument[];
+  try {
+    documents = await loadCtxfstDocuments({
+      workspaceDir,
+      extraPaths: memorySearch.extraPaths,
+    });
+  } catch (err) {
+    defaultRuntime.error(`Prompt preview failed: ${formatErrorMessage(err)}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (documents.length === 0) {
+    defaultRuntime.log("No .ctxfst.md memory files found.");
+    return;
+  }
+
+  const preview = buildCtxfstPromptPreview({
+    documents,
+    query: normalizedQuery,
+    expandGraph: opts.expandGraph,
+    tokenLimit: opts.tokenLimit,
+  });
+
+  if (opts.json) {
+    defaultRuntime.writeJson({
+      query,
+      resolvedQuery: normalizedQuery,
+      documents: documents.map((doc) => doc.source_path),
+      contextPack: preview.contextPack,
+      prompt: preview.prompt,
+      rendered: preview.rendered,
+    });
+    return;
+  }
+
+  defaultRuntime.log(preview.rendered);
 }

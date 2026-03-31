@@ -144,6 +144,16 @@ describe("memory cli", () => {
     }
   }
 
+  async function copyCtxfstFixture(targetPath: string) {
+    const fixturePath = path.resolve(
+      import.meta.dirname,
+      "../../../docs/openclaw-upgrade-specs/examples/retrieval-test.ctxfst.md",
+    );
+    const source = await fs.readFile(fixturePath, "utf8");
+    await fs.mkdir(path.dirname(targetPath), { recursive: true });
+    await fs.writeFile(targetPath, source, "utf8");
+  }
+
   function getMemoryHelpText() {
     const program = new Command();
     registerMemoryCli(program);
@@ -265,8 +275,42 @@ describe("memory cli", () => {
     expect(helpText).toContain("Probe embedding provider readiness.");
     expect(helpText).toContain('openclaw memory search "meeting notes"');
     expect(helpText).toContain("Quick search using positional query.");
+    expect(helpText).toContain("openclaw memory prompt-preview --expand-graph");
+    expect(helpText).toContain("Render the Phase 5 CtxFST prompt context preview.");
     expect(helpText).toContain('openclaw memory search --query "deployment" --max-results 20');
     expect(helpText).toContain("Limit results for focused troubleshooting.");
+  });
+
+  it("renders ctxfst prompt preview with graph expansion", async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "memory-cli-prompt-preview-"));
+    const workspaceDir = path.join(tmpDir, "workspace");
+    await copyCtxfstFixture(path.join(workspaceDir, "memory", "retrieval-test.ctxfst.md"));
+
+    loadConfig.mockReturnValue({
+      agents: {
+        defaults: {
+          workspace: workspaceDir,
+          memorySearch: {
+            enabled: true,
+            provider: "openai",
+          },
+        },
+      },
+    });
+
+    const log = spyRuntimeLogs(defaultRuntime);
+    await runMemoryCli([
+      "prompt-preview",
+      "What is required before Analyze Resume?",
+      "--expand-graph",
+    ]);
+
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("## Relevant Entities"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("Analyze Resume"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("## Related Entities (Graph)"));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("REQUIRES"));
+
+    await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
   it("prints vector error when unavailable", async () => {
