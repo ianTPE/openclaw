@@ -1,7 +1,7 @@
 import type { EntityMatch } from "../formats/ctxfst/types.js";
 import type { EntityMatchWithScore } from "./entity-matcher.js";
 import type { fuseRetrievalResults } from "./rank-fusion.js";
-import type { ChunkHit, ContextPack } from "./types.js";
+import type { ChunkHit, ContextPack, ExpandedEntity } from "./types.js";
 
 export interface ContextPackInput {
   query: string;
@@ -9,6 +9,8 @@ export interface ContextPackInput {
   entityChunks: ChunkHit[];
   vectorChunks: ChunkHit[];
   keywordChunks: ChunkHit[];
+  expandedEntities?: ExpandedEntity[];
+  graphChunks?: ChunkHit[];
   fusedChunks: ReturnType<typeof fuseRetrievalResults>;
 }
 
@@ -34,6 +36,8 @@ export function buildContextPack(input: ContextPackInput): ContextPack {
     entity_chunks: input.entityChunks,
     vector_chunks: input.vectorChunks,
     keyword_chunks: input.keywordChunks,
+    expanded_entities: input.expandedEntities ?? [],
+    graph_chunks: input.graphChunks ?? [],
     fused_chunks: input.fusedChunks,
   };
 }
