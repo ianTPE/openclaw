@@ -299,13 +299,20 @@ Phase 5 仍不涵蓋：
 
 ## 建議驗收指令
 
-如果 OpenClaw 願意加最小驗收命令，建議形式像：
+目前 repo 已有最小 CLI 驗收入口，可直接使用：
 
 ```bash
-openclaw memory prompt-preview --format ctxfst "FastAPI parsing workflow"
-openclaw memory prompt-preview --format ctxfst --expand-graph "What is required before Analyze Resume?"
-openclaw memory prompt-preview --format ctxfst "How does the system parse an uploaded resume and what backend supports it?"
+openclaw memory search "FastAPI parsing workflow"
+openclaw memory search --expand-graph "What is required before Analyze Resume?"
+openclaw memory search "How does the system parse an uploaded resume and what backend supports it?"
+openclaw memory search --json --expand-graph "What is required before Analyze Resume?"
 ```
+
+補充：
+
+- 目前 CLI 不需要 `--format ctxfst`
+- 自然語句尾端標點（例如 `?`）會先做 query normalization，再進入 retrieval pipeline
+- `--json` 會輸出 `contextPack -> prompt -> rendered`，適合做驗收與 debug
 
 如果暫時沒有 CLI，也至少應有 integration tests 對 prompt adapter 輸出做 snapshot 驗證。
 

@@ -316,7 +316,7 @@
 
 ### Task 5.1
 
-- [ ] 定義 `ContextPack` 結構
+- [x] 定義 `ContextPack` 結構
 
 完成條件：
 
@@ -329,7 +329,7 @@
 
 ### Task 5.2
 
-- [ ] 實作 prompt adapter
+- [x] 實作 prompt adapter
 
 完成條件：
 
@@ -340,9 +340,13 @@
   - missing preconditions
   - suggested next actions
 
+補充：
+
+- 已提供 `openclaw memory search` 作為最小 CLI 驗收入口（`prompt-preview` 保留為 deprecated alias）
+
 ### Task 5.3
 
-- [ ] 實作 token budget / dedupe 策略
+- [x] 實作 token budget / dedupe 策略
 
 完成條件：
 
@@ -352,7 +356,7 @@
 
 ### Task 5.4
 
-- [ ] 建立 prompt regression examples
+- [x] 建立 prompt regression examples
 
 完成條件：
 
@@ -360,6 +364,10 @@
   - chunk-only prompt
   - entity-aware prompt
   - state-aware prompt mockup
+
+補充：
+
+- 已有 `prompt-adapter.test.ts` 覆蓋 Phase 5 主要驗收面向
 
 ---
 
