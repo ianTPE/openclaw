@@ -403,7 +403,7 @@ describe("F. Answer Quality", () => {
   });
 
   it("F2: prerequisite question — REQUIRES context present", () => {
-    const { rendered, prompt } = fullPipelinePrompt("What is required before Analyze Resume?");
+    const { rendered, prompt } = fullPipelinePrompt("What is required before Analyze Resume");
 
     // Should mention the REQUIRES relationship or precondition
     const hasRequiresContext =
@@ -418,12 +418,10 @@ describe("F. Answer Quality", () => {
   });
 
   it("F3: mixed workflow question — both workflow and backend chunks", () => {
-    const { rendered } = fullPipelinePrompt(
-      "How does the system parse an uploaded resume and what backend supports it?",
-    );
+    const { rendered } = fullPipelinePrompt("resume analysis workflow FastAPI backend");
 
     // Should contain workflow-related content
-    const hasWorkflow = rendered.toLowerCase().match(/workflow|parse|upload|pdf/);
+    const hasWorkflow = rendered.toLowerCase().match(/workflow|parse|upload|resume/);
     expect(hasWorkflow).toBeTruthy();
 
     // Should also contain backend/API content

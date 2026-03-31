@@ -197,6 +197,10 @@ function buildChunkSections(
     });
   }
 
+  // Sort by priority descending so high-signal chunks appear before low-signal.
+  // Within the same priority tier, preserve fused-score order (insertion order).
+  sections.sort((a, b) => b.priority - a.priority);
+
   return sections;
 }
 
