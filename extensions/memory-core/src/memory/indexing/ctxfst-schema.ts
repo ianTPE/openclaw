@@ -69,11 +69,46 @@ export function ensureCtxfstSchema(db: DatabaseSync): void {
       PRIMARY KEY (id)
     );
   `);
-  // Unique constraint for static/inferred edges to support safe upsert
+  // Unique constraint for static/inferred edges.
+  // Runtime edges avoid conflicts by using the edge UUID as their document_id,
+  // so (source_id, target_id, relation, document_id=uuid) is always unique per runtime event.
   db.exec(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_ctxfst_edges_static
       ON ctxfst_entity_edges(source_id, target_id, relation, document_id);
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_ctxfst_edges_source ON ctxfst_entity_edges(source_id);`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_ctxfst_edges_doc ON ctxfst_entity_edges(document_id);`);
+
+  // ── Phase 6: Runtime State ─────────────────────────────────────────────────
+
+  // Session-scoped world state (one row per session).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ctxfst_world_states (
+      session_id            TEXT PRIMARY KEY,
+      goal_entity_id        TEXT,
+      active_states_json    TEXT NOT NULL DEFAULT '[]',
+      completed_skills_json TEXT NOT NULL DEFAULT '[]',
+      blocked_by_json       TEXT NOT NULL DEFAULT '[]',
+      updated_at            INTEGER NOT NULL
+    );
+  `);
+
+  // Append-only runtime event log (one row per event; no uniqueness constraint).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ctxfst_runtime_events (
+      id                TEXT PRIMARY KEY,
+      session_id        TEXT NOT NULL,
+      event_type        TEXT NOT NULL,
+      entity_id         TEXT NOT NULL,
+      related_entity_id TEXT,
+      payload_json      TEXT NOT NULL DEFAULT '{}',
+      created_at        INTEGER NOT NULL
+    );
+  `);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_ctxfst_events_session ON ctxfst_runtime_events(session_id);`,
+  );
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_ctxfst_events_entity ON ctxfst_runtime_events(entity_id);`,
+  );
 }

@@ -37,8 +37,10 @@ export interface PromptAdapterOptions {
   entityDetails?: Map<string, EntityDetail>;
   /** Hard token limit for the entire rendered prompt. Defaults to 4000. */
   tokenLimit?: number;
-  /** Active user states (Phase 6 will populate; empty for now). */
+  /** Active user states from the session world state (Phase 6). */
   activeStates?: string[];
+  /** Entity IDs of skills already completed in this session (Phase 6). */
+  completedSkills?: string[];
 }
 
 // ── Section builders ──────────────────────────────────────────────
@@ -207,12 +209,18 @@ function buildChunkSections(
 function buildNextActionsSection(
   contextPack: ContextPack,
   entityDetails: Map<string, EntityDetail>,
+  completedSkills: string[],
 ): PromptSection | null {
+  const completedSet = new Set(completedSkills);
   const actions: string[] = [];
   const seen = new Set<string>();
 
-  // Suggest postconditions of matched entities as next steps
+  // Suggest postconditions of matched entities as next steps,
+  // but skip entities whose skill has already been completed in this session.
   for (const entity of contextPack.matched_entities) {
+    if (completedSet.has(entity.entity_id)) {
+      continue;
+    }
     const detail = entityDetails.get(entity.entity_id);
     if (!detail?.postconditions.length) {
       continue;
@@ -308,6 +316,7 @@ export function adaptContextToPrompt(options: PromptAdapterOptions): PromptConte
     entityDetails = new Map(),
     tokenLimit = 4000,
     activeStates = [],
+    completedSkills = [],
   } = options;
 
   // Build sections in display order
@@ -328,7 +337,7 @@ export function adaptContextToPrompt(options: PromptAdapterOptions): PromptConte
   const chunks = buildChunkSections(contextPack.fused_chunks, chunkContent);
   sections.push(...chunks);
 
-  const nextActions = buildNextActionsSection(contextPack, entityDetails);
+  const nextActions = buildNextActionsSection(contextPack, entityDetails, completedSkills);
   if (nextActions) sections.push(nextActions);
 
   // Apply token budget
