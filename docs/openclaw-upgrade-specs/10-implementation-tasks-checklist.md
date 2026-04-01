@@ -16,7 +16,7 @@
 
 ### Task 0.1
 
-- [ ] 確認 `CtxFST` 核心欄位最小集合
+- [x] 確認 `CtxFST` 核心欄位最小集合
 
 完成條件：
 
@@ -29,7 +29,7 @@
 
 ### Task 0.2
 
-- [ ] 確認 entity types 與 relation enums
+- [x] 確認 entity types 與 relation enums
 
 完成條件：
 
@@ -40,7 +40,7 @@
 
 ### Task 0.3
 
-- [ ] 確認舊 memory pipeline 哪些部分沿用、哪些部分擴充
+- [x] 確認舊 memory pipeline 哪些部分沿用、哪些部分擴充
 
 完成條件：
 
@@ -55,7 +55,7 @@
 
 ### Task 1.1
 
-- [ ] 新增 `.ctxfst.md` format detection
+- [x] 新增 `.ctxfst.md` format detection
 
 完成條件：
 
@@ -64,7 +64,7 @@
 
 ### Task 1.2
 
-- [ ] 實作 YAML frontmatter parser
+- [x] 實作 YAML frontmatter parser
 
 完成條件：
 
@@ -72,7 +72,7 @@
 
 ### Task 1.3
 
-- [ ] 實作 `<Chunk id="...">` body parser
+- [x] 實作 `<Chunk id="...">` body parser
 
 完成條件：
 
@@ -81,7 +81,7 @@
 
 ### Task 1.4
 
-- [ ] 實作 cross-reference validator
+- [x] 實作 cross-reference validator
 
 完成條件：
 
@@ -94,7 +94,7 @@
 
 ### Task 1.5
 
-- [ ] 實作 canonicalization
+- [x] 實作 canonicalization
 
 完成條件：
 
@@ -106,7 +106,7 @@
 
 ### Task 1.6
 
-- [ ] 補 parser test fixtures
+- [x] 補 parser test fixtures
 
 完成條件：
 
@@ -124,7 +124,7 @@
 
 ### Task 2.1
 
-- [ ] 新增 `documents` schema migration
+- [x] 新增 `documents` schema migration
 
 完成條件：
 
@@ -133,7 +133,7 @@
 
 ### Task 2.2
 
-- [ ] 新增 `entities` schema migration
+- [x] 新增 `entities` schema migration
 
 完成條件：
 
@@ -147,7 +147,7 @@
 
 ### Task 2.3
 
-- [ ] 新增 `chunk_entities` schema migration
+- [x] 新增 `chunk_entities` schema migration
 
 完成條件：
 
@@ -155,7 +155,7 @@
 
 ### Task 2.4
 
-- [ ] 新增 `entity_edges` schema migration
+- [x] 新增 `entity_edges` schema migration
 
 完成條件：
 
@@ -167,7 +167,7 @@
 
 ### Task 2.5
 
-- [ ] 實作 `CtxFST` document indexer
+- [x] 實作 `CtxFST` document indexer
 
 完成條件：
 
@@ -176,7 +176,7 @@
 
 ### Task 2.6
 
-- [ ] 導入 source hash 與增量重建策略
+- [x] 導入 source hash 與增量重建策略
 
 完成條件：
 
@@ -185,7 +185,7 @@
 
 ### Task 2.7
 
-- [ ] 實作從 preconditions / postconditions 自動推斷 static edges
+- [x] 實作從 preconditions / postconditions 自動推斷 static edges
 
 完成條件：
 
@@ -204,7 +204,7 @@
 
 ### Task 3.1
 
-- [ ] 實作 entity exact match
+- [x] 實作 entity exact match
 
 完成條件：
 
@@ -212,7 +212,7 @@
 
 ### Task 3.2
 
-- [ ] 實作 alias match
+- [x] 實作 alias match
 
 完成條件：
 
@@ -220,7 +220,7 @@
 
 ### Task 3.3
 
-- [ ] 實作 entity -> chunk reverse lookup
+- [x] 實作 entity -> chunk reverse lookup
 
 完成條件：
 
@@ -228,7 +228,7 @@
 
 ### Task 3.4
 
-- [ ] 保留既有 vector retrieval 並接到 fusion pipeline
+- [x] 保留既有 vector retrieval 並接到 fusion pipeline
 
 完成條件：
 
@@ -236,7 +236,7 @@
 
 ### Task 3.5
 
-- [ ] 保留 keyword / FTS retrieval 並接到 fusion pipeline
+- [x] 保留 keyword / FTS retrieval 並接到 fusion pipeline
 
 完成條件：
 
@@ -244,7 +244,7 @@
 
 ### Task 3.6
 
-- [ ] 實作 fusion / ranking
+- [x] 實作 fusion / ranking
 
 完成條件：
 
@@ -256,7 +256,7 @@
 
 ### Task 3.7
 
-- [ ] 實作 retrieval integration tests
+- [x] 實作 retrieval integration tests
 
 完成條件：
 
@@ -272,7 +272,7 @@
 
 ### Task 4.1
 
-- [ ] 定義第一版 relation 權重
+- [x] 定義第一版 relation 權重
 
 完成條件：
 
@@ -284,7 +284,7 @@
 
 ### Task 4.2
 
-- [ ] 實作 one-hop graph expansion
+- [x] 實作 one-hop graph expansion
 
 完成條件：
 
@@ -293,7 +293,7 @@
 
 ### Task 4.3
 
-- [ ] 實作 expansion budget controls
+- [x] 實作 expansion budget controls
 
 完成條件：
 
@@ -304,7 +304,7 @@
 
 ### Task 4.4
 
-- [ ] 將 graph expansion 接入 fusion pipeline
+- [x] 將 graph expansion 接入 fusion pipeline
 
 完成條件：
 
@@ -528,13 +528,13 @@
 
 如果只做 MVP，至少完成以下項目：
 
-- [ ] `.ctxfst.md` detection
-- [ ] parser + validator
-- [ ] `documents` / `entities` / `chunk_entities` schema
-- [ ] entity exact / alias match
-- [ ] entity -> chunk reverse lookup
-- [ ] chunk + entity fusion retrieval
-- [ ] prompt adapter
+- [x] `.ctxfst.md` detection
+- [x] parser + validator
+- [x] `documents` / `entities` / `chunk_entities` schema
+- [x] entity exact / alias match
+- [x] entity -> chunk reverse lookup
+- [x] chunk + entity fusion retrieval
+- [x] prompt adapter
 
 ---
 

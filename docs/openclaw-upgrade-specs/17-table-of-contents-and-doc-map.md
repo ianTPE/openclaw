@@ -46,8 +46,9 @@
 - `23-phase-3-validation-checklist.md`
 - `24-phase-4-validation-checklist.md`
 - `25-phase-5-validation-checklist.md`
-- `26-phase-6-validation-checklist.md`
-- `27-phase-7-validation-checklist.md`
+- `26-phase-5-cli-smoke-tests.md`
+- `27-phase-6-validation-checklist.md`
+- `28-phase-7-validation-checklist.md`
 
 ### Examples
 
@@ -212,7 +213,7 @@ fork 前先確認 gap：
 
 8. `11-test-plan.md`
 9. `12-benchmark-plan.md`
-10. `21-phase-1-validation-checklist.md` 到 `27-phase-7-validation-checklist.md`（每做完一個 phase 就看對應的）
+10. `21-phase-1-validation-checklist.md` 到 `28-phase-7-validation-checklist.md`（每做完一個 phase 就看對應的）
 11. `18-fork-maintenance-strategy.md`
 12. `19-plugin-architecture-option.md`
 

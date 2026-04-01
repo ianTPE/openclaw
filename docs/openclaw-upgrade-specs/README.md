@@ -72,9 +72,11 @@
   - Phase 4 Graph Expansion 驗收清單
 - `25-phase-5-validation-checklist.md`
   - Phase 5 Prompt Adapter 驗收清單
-- `26-phase-6-validation-checklist.md`
+- `26-phase-5-cli-smoke-tests.md`
+  - Phase 5 CLI Smoke Test 指令清單
+- `27-phase-6-validation-checklist.md`
   - Phase 6 Runtime State 驗收清單
-- `27-phase-7-validation-checklist.md`
+- `28-phase-7-validation-checklist.md`
   - Phase 7 Planner And Routing 驗收清單
 - `examples/minimal.ctxfst.md`
   - 最小合法 `.ctxfst.md` 範例
