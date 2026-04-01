@@ -437,7 +437,7 @@
 
 ### Task 7.1
 
-- [ ] 定義 goal-aware ranking inputs
+- [x] 定義 goal-aware ranking inputs
 
 完成條件：
 
@@ -449,7 +449,7 @@
 
 ### Task 7.2
 
-- [ ] 實作 relation-aware weighting
+- [x] 實作 relation-aware weighting
 
 完成條件：
 
@@ -457,7 +457,7 @@
 
 ### Task 7.3
 
-- [ ] 實作 suggested next actions
+- [x] 實作 suggested next actions
 
 完成條件：
 
@@ -465,7 +465,7 @@
 
 ### Task 7.4
 
-- [ ] 建立 explainability hooks
+- [x] 建立 explainability hooks
 
 完成條件：
 

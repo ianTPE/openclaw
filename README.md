@@ -168,6 +168,10 @@ Run `openclaw doctor` to surface risky/misconfigured DM policies.
 - [Cron + wakeups](https://docs.openclaw.ai/automation/cron-jobs); [webhooks](https://docs.openclaw.ai/automation/webhook); [Gmail Pub/Sub](https://docs.openclaw.ai/automation/gmail-pubsub).
 - [Skills platform](https://docs.openclaw.ai/tools/skills): bundled, managed, and workspace skills with install gating + UI.
 
+### Memory
+
+- [CtxFST memory pipeline](https://docs.openclaw.ai/cli/memory): entity-aware indexing, graph expansion, rank fusion, token-budgeted prompt adapter, session-scoped runtime state, goal-aware planner with explainability.
+
 ### Runtime + safety
 
 - [Channel routing](https://docs.openclaw.ai/channels/channel-routing), [retry policy](https://docs.openclaw.ai/concepts/retry), and [streaming/chunking](https://docs.openclaw.ai/concepts/streaming).
@@ -209,6 +213,40 @@ WhatsApp / Telegram / Slack / Discord / Google Chat / Signal / iMessage / BlueBu
 - **[Canvas + A2UI](https://docs.openclaw.ai/platforms/mac/canvas)** — agent‑driven visual workspace (A2UI host: [Canvas/A2UI](https://docs.openclaw.ai/platforms/mac/canvas#canvas-a2ui)).
 - **[Voice Wake](https://docs.openclaw.ai/nodes/voicewake) + [Talk Mode](https://docs.openclaw.ai/nodes/talk)** — wake words on macOS/iOS plus continuous voice on Android.
 - **[Nodes](https://docs.openclaw.ai/nodes)** — Canvas, camera snap/clip, screen record, `location.get`, notifications, plus macOS‑only `system.run`/`system.notify`.
+- **[Memory (CtxFST)](https://docs.openclaw.ai/cli/memory)** — entity-aware, graph-capable memory pipeline. `.ctxfst.md` files are parsed into entities, chunks, and relations, indexed into SQLite, and retrieved via entity matching, graph expansion, and rank fusion. Includes a goal-aware planner with explainable next-action suggestions and session-scoped runtime state (preconditions, postconditions, writeback).
+
+## Memory
+
+OpenClaw ships a native CtxFST memory pipeline (`memory-core` plugin). It upgrades the default chunk-only memory to an entity-aware, state-aware system.
+
+**What it does:**
+
+- Parses `.ctxfst.md` files (entities, chunks, relations, state refs)
+- Indexes into SQLite with entity lookup, alias matching, and auto-inferred graph edges
+- Retrieves via entity matching + vector + keyword fusion with one-hop graph expansion
+- Formats retrieval results into token-budgeted, priority-ordered prompt context
+- Tracks session-scoped world state (preconditions, postconditions, completed skills)
+- Plans goal-aware next actions with explainable scoring (goal proximity, state readiness, novelty)
+
+**CLI:**
+
+```bash
+# Search memory
+openclaw memory search "What is required before Analyze Resume?"
+openclaw memory search --expand-graph --json "FastAPI parsing workflow"
+
+# Session state management
+openclaw memory state show --session my-session
+openclaw memory state precheck --session my-session --entity entity:analyze-resume
+openclaw memory state apply-success --session my-session --entity entity:analyze-resume
+openclaw memory state apply-failure --session my-session --entity entity:analyze-resume
+
+# Index management
+openclaw memory status --deep
+openclaw memory index --force
+```
+
+**Getting started:** place `.ctxfst.md` files in your workspace memory directory (`~/.openclaw/workspace/memory/`), then run `openclaw memory search "your query"`.
 
 ## Tailscale access (Gateway dashboard)
 
