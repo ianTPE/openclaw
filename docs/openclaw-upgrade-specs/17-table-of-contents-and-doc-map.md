@@ -48,6 +48,7 @@
 - `25-phase-5-validation-checklist.md`
 - `26-phase-5-cli-smoke-tests.md`
 - `27-phase-6-validation-checklist.md`
+- `27.5-phase-6-smoke-tests.md`
 - `28-phase-7-validation-checklist.md`
 
 ### Examples

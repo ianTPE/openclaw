@@ -30,7 +30,7 @@ import {
   listMemoryFiles,
   normalizeExtraMemoryPaths,
 } from "openclaw/plugin-sdk/memory-core-host-runtime-files";
-import type { MemoryCommandOptions, MemorySearchCommandOptions } from "./cli.types.js";
+import type { MemoryCommandOptions, MemorySearchCommandOptions, MemoryStateCommandOptions } from "./cli.types.js";
 import { canonicalizeCtxfstDocument } from "./memory/formats/ctxfst/canonicalize.js";
 import { parseCtxfstDocument } from "./memory/formats/ctxfst/parser.js";
 import type { CtxfstDocument } from "./memory/formats/ctxfst/types.js";
@@ -40,6 +40,14 @@ import { ensureCtxfstSchema } from "./memory/indexing/ctxfst-schema.js";
 import { adaptContextToPrompt, renderPromptContext } from "./memory/retrieval/prompt-adapter.js";
 import { retrieveContext } from "./memory/retrieval/retrieval-pipeline.js";
 import type { ChunkContent, EntityDetail } from "./memory/retrieval/types.js";
+import {
+  applyFailureWriteback,
+  applySuccessWriteback,
+  checkPreconditions,
+  getOrCreateWorldState,
+  getSessionEvents,
+  loadWorldState,
+} from "./memory/runtime/world-state.js";
 
 type MemoryManager = NonNullable<Awaited<ReturnType<typeof getMemorySearchManager>>["manager"]>;
 type MemoryManagerPurpose = Parameters<typeof getMemorySearchManager>[0]["purpose"];
@@ -853,4 +861,146 @@ export async function runMemorySearch(
   }
 
   defaultRuntime.log(preview.rendered);
+}
+
+// ── memory state handlers ─────────────────────────────────────────────────────
+
+function openStateDb(workspaceDir: string): import("node:sqlite").DatabaseSync {
+  const dbPath = path.join(workspaceDir, "ctxfst-state.db");
+  const db = new DatabaseSync(dbPath);
+  ensureCtxfstSchema(db);
+  return db;
+}
+
+export async function runMemoryStateShow(opts: MemoryStateCommandOptions): Promise<void> {
+  setVerbose(Boolean(opts.verbose));
+  const { config: cfg, diagnostics } = await loadMemoryCommandConfig("memory state show");
+  emitMemorySecretResolveDiagnostics(diagnostics, { json: Boolean(opts.json) });
+  const agentId = resolveAgent(cfg, opts.agent);
+  const workspaceDir = resolveAgentWorkspaceDir(cfg, agentId);
+
+  const db = openStateDb(workspaceDir);
+  try {
+    const state = loadWorldState(db, opts.session);
+    const events = getSessionEvents(db, opts.session);
+
+    if (opts.json) {
+      defaultRuntime.writeJson({ session_id: opts.session, state, events });
+      return;
+    }
+
+    if (!state) {
+      defaultRuntime.log(`No world state found for session: ${opts.session}`);
+      return;
+    }
+
+    defaultRuntime.log(`Session: ${state.session_id}`);
+    if (state.goal_entity_id) {
+      defaultRuntime.log(`Goal: ${state.goal_entity_id}`);
+    }
+    defaultRuntime.log(`Active states: ${state.active_states.join(", ") || "(none)"}`);
+    defaultRuntime.log(
+      `Completed skills: ${state.completed_skills.map((s) => s.entityId).join(", ") || "(none)"}`,
+    );
+    defaultRuntime.log(`Blocked by: ${state.blocked_by.join(", ") || "(none)"}`);
+    defaultRuntime.log(`Runtime events: ${events.length}`);
+  } finally {
+    db.close();
+  }
+}
+
+export async function runMemoryStatePrecheck(opts: MemoryStateCommandOptions): Promise<void> {
+  if (!opts.entity) {
+    defaultRuntime.error("--entity <id> is required for precheck.");
+    process.exitCode = 1;
+    return;
+  }
+
+  setVerbose(Boolean(opts.verbose));
+  const { config: cfg, diagnostics } = await loadMemoryCommandConfig("memory state precheck");
+  emitMemorySecretResolveDiagnostics(diagnostics, { json: Boolean(opts.json) });
+  const agentId = resolveAgent(cfg, opts.agent);
+  const workspaceDir = resolveAgentWorkspaceDir(cfg, agentId);
+
+  const db = openStateDb(workspaceDir);
+  try {
+    const result = checkPreconditions(db, opts.session, opts.entity);
+
+    if (opts.json) {
+      defaultRuntime.writeJson({ session_id: opts.session, entity: opts.entity, ...result });
+      return;
+    }
+
+    if (result.ok) {
+      defaultRuntime.log(`Preconditions satisfied for ${opts.entity}.`);
+    } else {
+      defaultRuntime.log(`Preconditions NOT satisfied for ${opts.entity}.`);
+      defaultRuntime.log(`Missing: ${result.missing.join(", ")}`);
+      process.exitCode = 1;
+    }
+  } finally {
+    db.close();
+  }
+}
+
+export async function runMemoryStateApplySuccess(opts: MemoryStateCommandOptions): Promise<void> {
+  if (!opts.entity) {
+    defaultRuntime.error("--entity <id> is required for apply-success.");
+    process.exitCode = 1;
+    return;
+  }
+
+  setVerbose(Boolean(opts.verbose));
+  const { config: cfg, diagnostics } = await loadMemoryCommandConfig("memory state apply-success");
+  emitMemorySecretResolveDiagnostics(diagnostics, { json: Boolean(opts.json) });
+  const agentId = resolveAgent(cfg, opts.agent);
+  const workspaceDir = resolveAgentWorkspaceDir(cfg, agentId);
+
+  const db = openStateDb(workspaceDir);
+  try {
+    applySuccessWriteback(db, opts.session, opts.entity, undefined, {
+      resultSummary: opts.summary,
+    });
+    const state = getOrCreateWorldState(db, opts.session);
+
+    if (opts.json) {
+      defaultRuntime.writeJson({ session_id: opts.session, entity: opts.entity, state });
+      return;
+    }
+
+    defaultRuntime.log(`Success writeback applied for ${opts.entity}.`);
+    defaultRuntime.log(`Active states: ${state.active_states.join(", ") || "(none)"}`);
+  } finally {
+    db.close();
+  }
+}
+
+export async function runMemoryStateApplyFailure(opts: MemoryStateCommandOptions): Promise<void> {
+  if (!opts.entity) {
+    defaultRuntime.error("--entity <id> is required for apply-failure.");
+    process.exitCode = 1;
+    return;
+  }
+
+  setVerbose(Boolean(opts.verbose));
+  const { config: cfg, diagnostics } = await loadMemoryCommandConfig("memory state apply-failure");
+  emitMemorySecretResolveDiagnostics(diagnostics, { json: Boolean(opts.json) });
+  const agentId = resolveAgent(cfg, opts.agent);
+  const workspaceDir = resolveAgentWorkspaceDir(cfg, agentId);
+
+  const db = openStateDb(workspaceDir);
+  try {
+    applyFailureWriteback(db, opts.session, opts.entity);
+    const state = getOrCreateWorldState(db, opts.session);
+
+    if (opts.json) {
+      defaultRuntime.writeJson({ session_id: opts.session, entity: opts.entity, state });
+      return;
+    }
+
+    defaultRuntime.log(`Failure writeback applied for ${opts.entity}.`);
+    defaultRuntime.log(`Blocked by: ${state.blocked_by.join(", ")}`);
+  } finally {
+    db.close();
+  }
 }

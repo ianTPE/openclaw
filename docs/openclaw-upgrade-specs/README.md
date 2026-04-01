@@ -76,6 +76,8 @@
   - Phase 5 CLI Smoke Test 指令清單
 - `27-phase-6-validation-checklist.md`
   - Phase 6 Runtime State 驗收清單
+- `27.5-phase-6-smoke-tests.md`
+  - Phase 6 Validation Smoke Test 指令清單
 - `28-phase-7-validation-checklist.md`
   - Phase 7 Planner And Routing 驗收清單
 - `examples/minimal.ctxfst.md`

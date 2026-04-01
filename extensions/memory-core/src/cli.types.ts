@@ -12,3 +12,10 @@ export type MemorySearchCommandOptions = MemoryCommandOptions & {
   expandGraph?: boolean;
   tokenLimit?: number;
 };
+
+export type MemoryStateCommandOptions = MemoryCommandOptions & {
+  session: string;
+  entity?: string;
+  goal?: string;
+  summary?: string;
+};
