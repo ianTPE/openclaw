@@ -1,3 +1,5 @@
+import type { PlannerOutput } from "./planner-types.js";
+import { buildPlannerPromptSections } from "./planner.js";
 import type {
   ChunkContent,
   ContextPack,
@@ -41,6 +43,12 @@ export interface PromptAdapterOptions {
   activeStates?: string[];
   /** Entity IDs of skills already completed in this session (Phase 6). */
   completedSkills?: string[];
+  /**
+   * Planner output (Phase 7). When provided, replaces the simple
+   * postcondition-based "Suggested Next Actions" section with the
+   * goal-aware "Next Actions" and "Blocked Actions" sections.
+   */
+  plannerOutput?: PlannerOutput;
 }
 
 // ── Section builders ──────────────────────────────────────────────
@@ -317,6 +325,7 @@ export function adaptContextToPrompt(options: PromptAdapterOptions): PromptConte
     tokenLimit = 4000,
     activeStates = [],
     completedSkills = [],
+    plannerOutput,
   } = options;
 
   // Build sections in display order
@@ -337,8 +346,14 @@ export function adaptContextToPrompt(options: PromptAdapterOptions): PromptConte
   const chunks = buildChunkSections(contextPack.fused_chunks, chunkContent);
   sections.push(...chunks);
 
-  const nextActions = buildNextActionsSection(contextPack, entityDetails, completedSkills);
-  if (nextActions) sections.push(nextActions);
+  // Phase 7: when planner output is available, use its richer sections instead
+  // of the simple postcondition-based next-actions list.
+  if (plannerOutput) {
+    sections.push(...buildPlannerPromptSections(plannerOutput));
+  } else {
+    const nextActions = buildNextActionsSection(contextPack, entityDetails, completedSkills);
+    if (nextActions) sections.push(nextActions);
+  }
 
   // Apply token budget
   const trimmed = trimToTokenBudget(sections, tokenLimit);
