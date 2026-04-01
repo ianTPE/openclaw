@@ -375,7 +375,7 @@
 
 ### Task 6.1
 
-- [ ] 新增 `world_states` schema migration
+- [x] 新增 `world_states` schema migration
 
 完成條件：
 
@@ -388,7 +388,7 @@
 
 ### Task 6.2
 
-- [ ] 新增 `runtime_events` schema migration
+- [x] 新增 `runtime_events` schema migration
 
 完成條件：
 
@@ -396,7 +396,7 @@
 
 ### Task 6.3
 
-- [ ] 實作 precondition checker
+- [x] 實作 precondition checker
 
 完成條件：
 
@@ -406,7 +406,7 @@
 
 ### Task 6.4
 
-- [ ] 實作 postcondition writeback
+- [x] 實作 postcondition writeback
 
 完成條件：
 
@@ -414,7 +414,7 @@
 
 ### Task 6.5
 
-- [ ] 實作 runtime edge writeback
+- [x] 實作 runtime edge writeback
 
 完成條件：
 
@@ -425,7 +425,7 @@
 
 ### Task 6.6
 
-- [ ] 讓 retrieval 能讀 session world state
+- [x] 讓 retrieval 能讀 session world state
 
 完成條件：
 
